@@ -15,13 +15,34 @@ import org.crf.utilities.CrfException;
  * Date: Nov 6, 2014
  *
  */
-public class NegatedFunction extends TwiceDerivableFunction
+public class NegatedFunction implements TwiceDerivableFunction
 {
+	private final Function function;
+	private final DerivableFunction derivableFunction;
+	private final TwiceDerivableFunction twiceDerivableFunction;
+	private final int theSize;
+
+	private NegatedFunction(Function function,
+							DerivableFunction derivableFunction,
+							TwiceDerivableFunction twiceDerivableFunction) {
+		super();
+		this.function = function;
+		this.derivableFunction = derivableFunction;
+		this.twiceDerivableFunction = twiceDerivableFunction;
+		if (function != null) {
+			this.theSize = function.size();
+		} else if (derivableFunction != null) {
+			this.theSize = derivableFunction.size();
+		} else if (twiceDerivableFunction != null) {
+			this.theSize = twiceDerivableFunction.size();
+		} else throw new CrfException("BUG");
+	}
+
 	public static NegatedFunction fromFunction(Function function)
 	{
 		return new NegatedFunction(function, null, null);
 	}
-	
+
 	public static NegatedFunction fromDerivableFunction(DerivableFunction derivableFunction)
 	{
 		return new NegatedFunction(null,derivableFunction,null);
@@ -31,7 +52,6 @@ public class NegatedFunction extends TwiceDerivableFunction
 	{
 		return new NegatedFunction(null,null,twiceDerivableFunction);
 	}
-
 	
 	@Override
 	public int size()
@@ -74,21 +94,7 @@ public class NegatedFunction extends TwiceDerivableFunction
 		}
 		else throw new CrfException("BUG");
 	}
-	
-	private NegatedFunction(Function function,
-			DerivableFunction derivableFunction,
-			TwiceDerivableFunction twiceDerivableFunction)
-	{
-		super();
-		this.function = function;
-		this.derivableFunction = derivableFunction;
-		this.twiceDerivableFunction = twiceDerivableFunction;
-		if (function!=null){this.theSize = function.size();}
-		else if (derivableFunction!=null){this.theSize = derivableFunction.size();}
-		else if (twiceDerivableFunction!=null){this.theSize = twiceDerivableFunction.size();}
-		else throw new CrfException("BUG");
-	}
-	
+
 	private double[] negate(double[] array)
 	{
 		double[] ret = new double[array.length];
@@ -98,12 +104,4 @@ public class NegatedFunction extends TwiceDerivableFunction
 		}
 		return ret;
 	}
-	
-
-
-
-	private final Function function;
-	private final DerivableFunction derivableFunction;
-	private final TwiceDerivableFunction twiceDerivableFunction;
-	private final int theSize;
 }

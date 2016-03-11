@@ -24,12 +24,12 @@ package org.crf.function;
  * Date: Nov 6, 2014
  *
  */
-public abstract class TwiceDerivableFunction implements DerivableFunction
+public interface TwiceDerivableFunction extends DerivableFunction
 {
 	/**
 	 * Returns the Hessian matrix for the given function in the given point (point is "x" -- the function input).
 	 * @param point "point" is "x" -- the input for the function.
 	 * @return the Hessian matrix -- the matrix of partial second derivations.
 	 */
-	public abstract double[][] hessian(double[] point);
+	double[][] hessian(double[] point);
 }
