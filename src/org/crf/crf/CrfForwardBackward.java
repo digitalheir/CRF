@@ -1,13 +1,13 @@
 package org.crf.crf;
 
+import org.apache.log4j.Logger;
+import org.crf.utilities.ArbitraryRangeArray;
+import org.crf.utilities.CrfException;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.log4j.Logger;
-import org.crf.utilities.ArbitraryRangeArray;
-import org.crf.utilities.CrfException;
 
 import static org.crf.crf.CrfUtilities.roughlyEqual;
 
@@ -60,6 +60,18 @@ import static org.crf.crf.CrfUtilities.roughlyEqual;
  */
 public class CrfForwardBackward<K,G>
 {
+	@SuppressWarnings("unused")
+	private static final Logger logger = Logger.getLogger(CrfForwardBackward.class);
+	protected final CrfModel<K, G> model;
+	protected final K[] sentence;
+	protected final CrfRememberActiveFeatures<K, G> activeFeaturesForSentence;
+	private CrfPsi_FormulaAllTokens<K, G> allTokensFormula = null;
+	private Map<G, Double>[] alpha_forward;
+	private ArbitraryRangeArray<LinkedHashMap<G, Double>> beta_backward;
+	private double finalAlpha = 0.0;
+	private double finalBeta = 0.0;
+	private boolean calculated = false;
+	private boolean onlyNormalizationFactorCalculated = false;
 	public CrfForwardBackward(CrfModel<K, G> model, K[] sentence, CrfRememberActiveFeatures<K, G> activeFeaturesForSentence)
 	{
 		super();
@@ -67,23 +79,23 @@ public class CrfForwardBackward<K,G>
 		this.sentence = sentence;
 		this.activeFeaturesForSentence = activeFeaturesForSentence;
 	}
-	
+
 	public void setAllTokensFormulaValues(CrfPsi_FormulaAllTokens<K,G> allTokensFormula)
 	{
 		this.allTokensFormula = allTokensFormula;
 	}
-	
+
 	public void calculateForwardAndBackward()
 	{
 		if (null==allTokensFormula)
 		{
 			allTokensFormula = CrfPsi_FormulaAllTokens.createAndCalculate(model, sentence, activeFeaturesForSentence);
 		}
-		
+
 		calculateAlphaForward();
 		calculateBetaBackward();
-		
-		if (!roughlyEqual(finalAlpha, finalAlpha))
+
+		if (!roughlyEqual(finalAlpha, finalBeta))
 		{
 			String errorMessage = "The calculated final-alpha and final-beta, both correspond to Z(x) (the normalization factor) differ.\n"
 					+ "Z(x) by alpha (forward) = "+String.format("%-3.3f", finalAlpha)+". Z(x) by beta (backward) = "+String.format("%-3.3f", finalBeta);
@@ -91,7 +103,7 @@ public class CrfForwardBackward<K,G>
 		}
 		calculated=true;
 	}
-	
+
 	public void calculateOnlyNormalizationFactor()
 	{
 		if (null==allTokensFormula)
@@ -102,9 +114,7 @@ public class CrfForwardBackward<K,G>
 		calculateAlphaForward();
 		onlyNormalizationFactorCalculated = true;
 	}
-	
-	
-	
+
 	public Map<G, Double>[] getAlpha_forward()
 	{
 		if (!calculated) {throw new CrfException("forward-backward not calculated");}
@@ -123,8 +133,6 @@ public class CrfForwardBackward<K,G>
 		return finalAlpha;
 	}
 
-	
-	
 	@SuppressWarnings("unchecked")
 	private void calculateAlphaForward()
 	{
@@ -151,8 +159,8 @@ public class CrfForwardBackward<K,G>
 			}
 			alpha_forward[index] = alpha_forwardThisToken;
 		}
-		
-		
+
+
 		finalAlpha = 0.0;
 		Map<G,Double> alphaLast = alpha_forward[sentence.length-1];
 		for (G tag : alphaLast.keySet())
@@ -160,8 +168,6 @@ public class CrfForwardBackward<K,G>
 			finalAlpha += alphaLast.get(tag);
 		}
 	}
-	
-	
 	
 	private void calculateBetaBackward()
 	{
@@ -171,11 +177,11 @@ public class CrfForwardBackward<K,G>
 		{
 			beta_backward.get(sentence.length-1).put(tag, 1.0);
 		}
-		
+
 		for (int index=sentence.length-2;index>=(-1);--index)
 		{
 			LinkedHashMap<G, Double> betaCurrentToken = new LinkedHashMap<G, Double>();
-			
+
 			Set<G> currentTokenPossibleTags = null;
 			if (index<0) {currentTokenPossibleTags=Collections.singleton(null);}
 			else {currentTokenPossibleTags = model.getCrfTags().getTags();}
@@ -193,26 +199,7 @@ public class CrfForwardBackward<K,G>
 			}
 			beta_backward.set(index, betaCurrentToken);
 		}
-		
+
 		finalBeta = beta_backward.get(-1).get(null);
 	}
-	
-	
-	
-	
-	protected final CrfModel<K, G> model;
-	protected final K[] sentence;
-	protected final CrfRememberActiveFeatures<K, G> activeFeaturesForSentence;
-
-	private CrfPsi_FormulaAllTokens<K, G> allTokensFormula = null;
-	private Map<G, Double>[] alpha_forward;
-	private ArbitraryRangeArray<LinkedHashMap<G, Double>> beta_backward;
-	private double finalAlpha = 0.0;
-	private double finalBeta = 0.0;
-	
-	private boolean calculated = false;
-	private boolean onlyNormalizationFactorCalculated = false;
-	
-	@SuppressWarnings("unused")
-	private static final Logger logger = Logger.getLogger(CrfForwardBackward.class);
 }
