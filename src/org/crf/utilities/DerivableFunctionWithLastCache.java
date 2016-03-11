@@ -14,8 +14,14 @@ import org.crf.function.DerivableFunction;
  * Date: Nov 13, 2014
  *
  */
-public class DerivableFunctionWithLastCache extends DerivableFunction
+public class DerivableFunctionWithLastCache implements DerivableFunction
 {
+	private static final Logger logger = Logger.getLogger(DerivableFunctionWithLastCache.class);
+	private final LastCache<DoubleArrayWrapper, Double> valueCache = new LastCache<DoubleArrayWrapper, Double>();
+	private final LastCache<DoubleArrayWrapper, double[]> gradientCache = new LastCache<DoubleArrayWrapper, double[]>();
+	private final DerivableFunction realFunction;
+
+	
 	public DerivableFunctionWithLastCache(DerivableFunction realFunction)
 	{
 		super();
@@ -62,18 +68,9 @@ public class DerivableFunctionWithLastCache extends DerivableFunction
 		return ret;
 	}
 
-
 	@Override
 	public int size()
 	{
 		return realFunction.size();
 	}
-
-	
-	private final LastCache<DoubleArrayWrapper, Double> valueCache = new LastCache<DoubleArrayWrapper, Double>();
-	private final LastCache<DoubleArrayWrapper, double[]> gradientCache = new LastCache<DoubleArrayWrapper, double[]>();
-	
-	private final DerivableFunction realFunction;
-	
-	private static final Logger logger = Logger.getLogger(DerivableFunctionWithLastCache.class);
 }
