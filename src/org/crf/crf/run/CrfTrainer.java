@@ -1,8 +1,5 @@
 package org.crf.crf.run;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 import org.crf.crf.CrfLogLikelihoodFunction;
 import org.crf.crf.CrfModel;
@@ -13,6 +10,9 @@ import org.crf.function.optimization.LbfgsMinimizer;
 import org.crf.function.optimization.NegatedFunction;
 import org.crf.utilities.CrfException;
 import org.crf.utilities.TaggedToken;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 
@@ -26,13 +26,18 @@ public class CrfTrainer<K,G>
 {
 	public static final double DEFAULT_SIGMA_SQUARED_INVERSE_REGULARIZATION_FACTOR = 10.0;
 	public static final boolean DEFAULT_USE_REGULARIZATION = true;
+	private static final Logger logger = Logger.getLogger(CrfTrainer.class);
+	private final CrfFeaturesAndFilters<K, G> features;
+	private final CrfTags<G> crfTags;
+	private final boolean useRegularization;
+	private final double sigmaSquare_inverseRegularizationFactor;
+	private CrfModel<K, G> learnedModel = null;
 
-	
+
 	public CrfTrainer(CrfFeaturesAndFilters<K, G> features, CrfTags<G> crfTags)
 	{
 		this(features,crfTags,DEFAULT_USE_REGULARIZATION,DEFAULT_SIGMA_SQUARED_INVERSE_REGULARIZATION_FACTOR);
 	}
-
 	public CrfTrainer(CrfFeaturesAndFilters<K, G> features, CrfTags<G> crfTags,
 			boolean useRegularization, double sigmaSquare_inverseRegularizationFactor)
 	{
@@ -42,7 +47,6 @@ public class CrfTrainer<K,G>
 		this.useRegularization = useRegularization;
 		this.sigmaSquare_inverseRegularizationFactor = sigmaSquare_inverseRegularizationFactor;
 	}
-
 
 	public void train(List<? extends List<? extends TaggedToken<K, G> >> corpus)
 	{
@@ -54,22 +58,17 @@ public class CrfTrainer<K,G>
 		lbfgsOptimizer.find();
 		double[] parameters = lbfgsOptimizer.getPoint();
 		if (parameters.length!=features.getFilteredFeatures().length) {throw new CrfException("Number of parameters, returned by LBFGS optimizer, differs from number of features.");}
-		
+
 		ArrayList<Double> parametersAsList = new ArrayList<Double>(parameters.length);
 		for (double parameter : parameters)
 		{
 			parametersAsList.add(parameter);
 		}
-		
+
 		learnedModel = new CrfModel<K, G>(crfTags,features,parametersAsList);
 		logger.info("Training of CRF - done.");
 	}
-	
-	
-	
-	
-	
-	
+
 	public CrfModel<K, G> getLearnedModel()
 	{
 		return learnedModel;
@@ -79,24 +78,19 @@ public class CrfTrainer<K,G>
 	{
 		if (null==learnedModel) throw new CrfException("Not yet trained");
 		return new CrfInferencePerformer<K,G>(learnedModel);
-		
+
 	}
 
-	
-	
 	private DerivableFunction createLogLikelihoodFunctionConcave(List<? extends List<? extends TaggedToken<K, G> >> corpus)
 	{
 		return new CrfLogLikelihoodFunction<K, G>(corpus,crfTags,features,useRegularization,sigmaSquare_inverseRegularizationFactor);
 	}
 
+	public CrfTags<G> getTags() {
+		return crfTags;
+	}
 
-	private final CrfFeaturesAndFilters<K, G> features;
-	private final CrfTags<G> crfTags;
-	private final boolean useRegularization;
-	private final double sigmaSquare_inverseRegularizationFactor;
-	
-	private CrfModel<K, G> learnedModel = null;
-
-	private static final Logger logger = Logger.getLogger(CrfTrainer.class);
-
+	public CrfFeaturesAndFilters<K, G> getFeatures() {
+		return features;
+	}
 }
